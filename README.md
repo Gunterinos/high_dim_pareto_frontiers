@@ -1,140 +1,99 @@
-# Setup
+**Requires:** Python 3.10+ and Node.js 18+ (with npm).
 
-This is a Pareto frontier portfolio explorer: a Flask backend serves CSV data and
-a Vite + D3 frontend renders linked visualizations of objective space (outputs) and
-decision space (inputs). It is meant to be run locally from your own machine.
+## Quick start
 
-## Prerequisites
+The app needs **two terminals running at the same time**: one for the backend,
+one for the frontend. Unzip the project first, then open both terminals in the
+unzipped project folder (the one containing `app.py`).
 
-- **Python** 3.10 or newer (the code uses `str | None` type hints)
-- **Node.js** 18 or newer (Vite 7 requires it) and npm
+### Step 1: start the backend (terminal 1)
 
-Check your versions:
+Paste the block for your system. Leave this terminal open; the backend must keep running.
 
-```bash
-python --version
-node --version
-npm --version
-```
-
-## 1. Clone the repository
+**macOS / Linux**
 
 ```bash
-git clone <your-repo-url>
-cd framework
+python3 -m venv venv
+venv/bin/python -m pip install -r requirements.txt
+venv/bin/python app.py
 ```
 
-## 2. Backend (Python)
-
-Create and activate a virtual environment, then install the dependencies.
-
-macOS / Linux:
-
-```bash
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-Windows (PowerShell):
+**Windows (PowerShell)**
 
 ```powershell
 python -m venv venv
-.\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+venv\Scripts\python -m pip install -r requirements.txt
+venv\Scripts\python app.py
 ```
 
-Dependencies: Flask, scikit-learn, numpy.
+Wait until it says it is running on http://127.0.0.1:5000.
 
-## 3. Frontend (Node)
+### Step 2: start the frontend (terminal 2)
+
+Open a **second** terminal in the same project folder and paste this (same on every system):
 
 ```bash
 cd frontend
 npm install
-cd ..
+npm run dev
 ```
 
-## Running the app
+Open the URL it prints, usually **http://localhost:5173**, and click **Start Survey**
+(top right). With the default setup this opens the **playground** (see below).
 
-There are two ways to run it locally.
+Keep both terminals open while you use it. To stop, press `Ctrl+C` in each.
 
-### Option A: development mode (two processes)
+### Running it again later
 
-Use this while editing frontend code, since it gives hot reloading.
+The installs only need to happen once. Next time, from the project folder:
 
-1. Start the backend (from the project root):
+- Terminal 1: `venv/bin/python app.py` (Windows: `venv\Scripts\python app.py`)
+- Terminal 2: `cd frontend` then `npm run dev`
 
-   ```bash
-   python app.py
-   ```
+## Playground and survey setups
 
-   Flask runs on http://127.0.0.1:5000.
+What happens after you click **Start Survey** depends on the **setup**. A setup
+is a folder of JSON configs. With no setup chosen, the app uses
+`survey_data/current_setup/`, which is the **playground**.
 
-2. In a second terminal, start the Vite dev server:
+### Playground (default)
 
-   ```bash
-   cd frontend
-   npm run dev
-   ```
+Free exploration with no tasks and no questionnaire:
 
-   Open the URL Vite prints (typically http://localhost:5173). The dev server
-   proxies all `/api` requests to Flask on port 5000, so both must be running.
+1. Click **Start Survey**. A "Playground" welcome screen appears; click **Open Playground →**.
+2. Two portfolio 3D frontiers load: equity heavy and fixed income/cash heavy,
+   plus the benchmark.
+3. Everything is unlocked. Toggle frontiers in the **Frontiers** panel, switch
+   charts and explore as long as you like. **Chart Guide** explains the interactions.
 
-### Option B: single process (built frontend)
+### Survey setups
 
-Use this to run everything from just the backend.
+| Setup | Data | Question files |
+| --- | --- | --- |
+| `expert_inteviews` | Expert interviews: portfolio 3D and 6D, single- and multi-frontier (20 tasks + 4 rating questions + comment box) | `questions_config.json` (default, no `file=` needed) |
+| `single_front_portfolio` | Portfolio, one frontier at a time | `single_portfolio_dashboard_then_table.json`, `single_portfolio_table_then_dashboard.json` |
+| `multi_front_portfolio` | Portfolio, comparing frontiers | `multi_portfolio_dashboard_then_table.json`, `multi_portfolio_table_then_dashboard.json` |
+| `single_front_diet` | Diet, one frontier at a time | `single_diet_dashboard_then_table.json`, `single_diet_table_then_dashboard.json` |
+| `multi_front_diet` | Diet, comparing frontiers | `multi_diet_dashboard_then_table.json`, `multi_diet_table_then_dashboard.json` |
 
-1. Build the frontend once:
+The `..._dashboard_then_table` and `..._table_then_dashboard` files contain the
+same tasks in a different order (which views come first).
 
-   ```bash
-   cd frontend
-   npm run build
-   cd ..
-   ```
+To run one, put the setup and question file in the URL, then click **Start Survey**:
 
-   This produces `frontend/dist`. When that folder exists, Flask serves the
-   built frontend directly.
-
-2. Start the backend:
-
-   ```bash
-   python app.py
-   ```
-
-   Open http://127.0.0.1:5000. Rebuild the frontend whenever you change frontend
-   code.
-
-## Data and survey setups
-
-- `data/benchmark.csv` is the benchmark frontier merged into every load.
-- `survey_data/setups/<name>/` holds each named survey setup (CSV frontiers,
-  `tutorial_config.json`, questions config).
-- `survey_data/current_setup/` is the default setup used when no setup is selected.
-- `survey_data/responses/<setup>/` is where submitted responses are written as
-  `responses_<sessionId>.json`. Responses are saved to local disk only.
-
-### CSV format
-
-- Row 0: direction metadata (`1` = maximise, `-1` = minimise, blank = decision variable)
-- Row 1 (optional): group labels (non-numeric strings)
-- Row 2+: data rows
-- Columns prefixed `dec_` are decision variables; `obj_` are objectives.
-
-### Optional environment variables
-
-- `SURVEY_SETUP` selects a setup under `survey_data/setups/` (defaults to
-  `current_setup`).
-- `SURVEY_QUESTIONS_FILE` overrides the questions config filename (defaults to
-  `questions_config.json`).
-
-Example:
-
-```bash
-SURVEY_SETUP=single_front_portfolio python app.py
+```text
+http://localhost:5173/?setup=single_front_portfolio&file=single_portfolio_dashboard_then_table.json
 ```
 
-## Notes
+Each run goes intro → tutorial → tasks → short questionnaire. Responses are
+written to `survey_data/responses/<setup>/responses_<sessionId>.json` on the
+machine running the backend only.
 
-- There are no automated tests.
-- The app is intended to be launched locally; there is no hosted deployment
-  configuration.
+### What a setup folder contains
+
+- `intro_config.json`: the welcome screen (title, body, button label).
+- `tutorial_config.json`: the dataset to load (`frontiers` + `benchmark`) and
+  the tutorial steps.
+- `questions_config.json` (or another name passed via `file=`): the tasks and the
+  post-task questionnaire. See `survey_data/example_questions.json` for one
+  example of each task type. The playground has no questions file.
