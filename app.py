@@ -562,7 +562,6 @@ def spa_catchall(path):
 
 if __name__ == "__main__":
     if getattr(sys, "frozen", False):
-        # Running as the .exe: open the browser and run without the debug reloader.
         import threading
         import webbrowser
         threading.Timer(1.5, lambda: webbrowser.open("http://127.0.0.1:5000")).start()

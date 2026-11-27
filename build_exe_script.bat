@@ -1,9 +1,5 @@
 @echo off
 setlocal
-rem Builds ParetoExplorer.exe (one self-contained file) on Windows.
-rem Needs Python 3.10+ and Node.js 18+ installed. Usage:
-rem   build_exe.bat                  -> output to "Desktop\Pareto Frontier Explorer"
-rem   build_exe.bat "C:\some\folder" -> output to that folder
 cd /d "%~dp0"
 
 set "OUT=%~1"
