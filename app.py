@@ -4,6 +4,7 @@ import csv
 import json
 import os
 import re
+import sys
 import urllib.error
 import urllib.request
 import uuid
@@ -12,19 +13,21 @@ from sklearn.decomposition import PCA
 from flask import Flask, jsonify, render_template, request
 from jinja2 import TemplateNotFound
 
-_BASE = Path(__file__).resolve().parent
+# When running as a bundled .exe (PyInstaller), files are unpacked to sys._MEIPASS.
+_BASE = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 _DIST = _BASE / "frontend" / "dist"
 _has_dist = _DIST.is_dir()
 
 app = Flask(
     __name__,
+    root_path=str(_BASE),
     template_folder="frontend/dist" if _has_dist else "frontend",
     static_folder="frontend/dist" if _has_dist else "frontend",
     static_url_path="" if _has_dist else "/frontend",
 )
-DATA_DIR = Path(__file__).resolve().parent / "data"
+DATA_DIR = _BASE / "data"
 BENCHMARK_PATH = DATA_DIR / "benchmark.csv"
-SURVEY_DATA_DIR = Path(__file__).resolve().parent / "survey_data"
+SURVEY_DATA_DIR = _BASE / "survey_data"
 
 _SAFE_NAME_RE = re.compile(r'^[\w\-]+$')
 _SAFE_FILE_RE = re.compile(r'^[\w\-.]+$')
@@ -284,7 +287,7 @@ def _resolve_data_file(fname):
     p = Path(fname)
     if p.parent == Path("."):
         return (DATA_DIR / p).resolve()
-    return (Path(__file__).resolve().parent / p).resolve()
+    return (_BASE / p).resolve()
 
 
 def _group_members(groups, dec_cols):
@@ -558,4 +561,12 @@ def spa_catchall(path):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    if getattr(sys, "frozen", False):
+        # Running as the .exe: open the browser and run without the debug reloader.
+        import threading
+        import webbrowser
+        threading.Timer(1.5, lambda: webbrowser.open("http://127.0.0.1:5000")).start()
+        print("Pareto Frontier Explorer is running at http://127.0.0.1:5000 - close this window to stop it.")
+        app.run(debug=False)
+    else:
+        app.run(debug=True)
